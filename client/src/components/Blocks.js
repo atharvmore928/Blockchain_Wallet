@@ -15,11 +15,18 @@ class Blocks extends Component {
         return (
             <div>
                 <h3>Blocks</h3>
-                <ul>
-                    {this.state.blocks.map((block, index) => (
-                        <li key={index}>{JSON.stringify(block)}</li>
-                    ))}
-                </ul>
+                {this.state.blocks.map((block, index) => (
+                    <div key={index} style={{ marginBottom: '20px' }}>
+                        {index === 0 ? (
+                            <div><strong>genesis-block</strong></div>
+                        ) : (
+                            <div><strong>hash-{index}</strong></div>
+                        )}
+                        <div style={{ wordBreak: 'break-all', fontSize: '12px' }}>
+                            {block.hash}
+                        </div>
+                    </div>
+                ))}
             </div>
         );
     }
