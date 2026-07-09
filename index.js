@@ -161,7 +161,7 @@ const syncWithRootState = () => {
       walletBarAction();
     }
 
-    transactionMinor.mineTransactions();
+    transactionMinor.mineTransaction();
   }
 };
 

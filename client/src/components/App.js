@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import Blocks from './Blocks';
-import logo from '../assets/logo.png';
+import { Link } from 'react-router-dom';
+import logo from '../../assets/logo.png';
 
 class App extends Component {
   state = { walletInfo: { address: 'fooxv6', balance: 9999 } }
@@ -18,14 +18,18 @@ class App extends Component {
   render() {
     const { address, balance } = this.state.walletInfo;
     return (
-      <div>
+      <div className='App'>
         <img className='logo' src={logo}></img>
         <br />
-        <h2>Welcome to the blockchain...</h2>
-        <div>Address: {address}</div>
-        <div>Balance: {balance}</div>
-        <br />
-        <Blocks />
+        <div className='WalletInfo'>
+          <h2>Welcome to the blockchain...</h2>
+          <div>Address: {address}</div>
+          <div>Balance: {balance}</div>
+          <div><Link to='/blocks'>Blocks</Link></div>
+          <br />
+          <div><Link to='/conduct-transaction'>Conduct a Transaction</Link></div>
+          <div><Link to='/transaction-pool'>Transaction Pool</Link></div>
+        </div>
       </div>
     );
   }
