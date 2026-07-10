@@ -1,3 +1,5 @@
+require('dotenv').config();
+const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const request = require('request');
 const Blockchain = require('./blockchain');
@@ -8,11 +10,18 @@ const Transaction = require('./wallet/transaction');
 const TransactionMinor = require('./app/transaction-minor');
 const express = require('express');
 const path = require('path');
-const cors = require('cors'); 
+const cors = require('cors');
+const authRoutes = require('./routes/auth');
+const authMiddleware = require('./middleware/auth');
+const TransactionRecord = require('./models/Transaction');
 
 const app = express();
 
- app.use(cors());
+app.use(cors());
+
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/cryptochain')
+    .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
 const blockchain = new Blockchain();
 const transactionPool = new TransactionPool();
@@ -28,6 +37,8 @@ setTimeout(() => pubsub.broadcastChain(), 1000);
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'client/dist')));
 
+app.use('/api/auth', authRoutes);
+
 app.get('/api/blocks', (req, res) => {
     console.log('GET /api/blocks ->', JSON.stringify(blockchain.chain, null, 2));
     res.json(blockchain.chain);
@@ -42,21 +53,33 @@ app.post('/api/mine', (req, res) => {
     res.redirect('/api/blocks');
 });
 
-app.post('/api/transact', (req, res) => {
+app.post('/api/transact', authMiddleware, async (req, res) => {
     const { amount, recipient } = req.body;
     
-    let transaction = transactionPool.existingTransaction({ inputAddress: wallet.publicKey });
+    // Use the authenticated user's wallet
+    const userWallet = new Wallet(req.user.privateKey);
+    
+    let transaction = transactionPool.existingTransaction({ inputAddress: userWallet.publicKey });
 
     try {
         if (transaction) {
-            transaction.update({ senderWallet: wallet, recipient, amount });
+            transaction.update({ senderWallet: userWallet, recipient, amount });
         } else {
-            transaction = wallet.createTransaction({ 
+            transaction = userWallet.createTransaction({ 
                 recipient, 
                 amount, 
                 chain: blockchain.chain 
             });
         }
+        
+        // Save to MongoDB Capped Collection
+        // Note: we use updateOne with upsert to handle updates if the transaction already existed in the pool
+        await TransactionRecord.updateOne(
+            { id: transaction.id },
+            { $set: { outputMap: transaction.outputMap, input: transaction.input } },
+            { upsert: true }
+        );
+        
     } catch (error) {
         return res.status(400).json({ type: 'error', message: error.message });
     }
@@ -77,16 +100,16 @@ app.get('/api/mine-transactions', (req, res) => {
     res.redirect('/api/blocks');
 });
 
-app.get('/api/wallet-info', (req, res) => {
-    const address = wallet.publicKey;
+app.get('/api/wallet-info', authMiddleware, (req, res) => {
+    const address = req.user.publicKey;
     res.json({
-        address: wallet.publicKey,
+        address: address,
         balance: Wallet.calculateBalance({
             chain: blockchain.chain,
-            address: wallet.publicKey
+            address: address
         })
     });
-    });
+});
 
     
 app.get('*' , (req, res) => {

@@ -4,9 +4,13 @@ const cryptoHash = require('../util/crypto-hash');
 const Transaction = require('./transaction');
 
 class Wallet {
-    constructor() {
+    constructor(privateKey) {
         this.balance = STARTING_BALANCE;
-        this.keyPair = ec.genKeyPair();
+        if (privateKey) {
+            this.keyPair = ec.keyFromPrivate(privateKey, 'hex');
+        } else {
+            this.keyPair = ec.genKeyPair();
+        }
         this.publicKey = this.keyPair.getPublic().encode('hex');
     }
 
