@@ -1,7 +1,7 @@
 const Transaction = require('./transaction');
 const Wallet = require('./index');
 const { verifySignature } = require('../util');
-const { REWARD_INPUT, MINING_REWARD } = require('../config');
+const { FEE_PERCENTAGE, ADMIN_WALLET_ADDRESS } = require('../config');
 
 describe('Transaction', () => {
     let transaction, senderWallet, recipient, amount;
@@ -27,7 +27,7 @@ describe('Transaction', () => {
         });
 
         it('outputs the remaining balance for the senderWallet', () => {
-            expect(transaction.outputMap[senderWallet.publicKey]).toEqual(senderWallet.balance - amount);
+            expect(transaction.outputMap[senderWallet.publicKey]).toEqual(senderWallet.balance - amount - (amount * FEE_PERCENTAGE));
         });
     });
 
@@ -136,14 +136,14 @@ describe('Transaction', () => {
             });
 
             it('subtracts the amount from the original sender output amount', () => {
-                expect(transaction.outputMap[senderWallet.publicKey]).toEqual(originalSenderOutput - nextAmount);
+                expect(transaction.outputMap[senderWallet.publicKey]).toEqual(originalSenderOutput - nextAmount - (nextAmount * FEE_PERCENTAGE));
             });
 
             it('maintains a total output that matches the input amount', () => {
                 expect(
                     Object.values(transaction.outputMap)
                         .reduce((total, outputAmount) => total + outputAmount, 0)
-                ).toEqual(transaction.input.amount);
+                ).toBeCloseTo(transaction.input.amount, 5);
             });
 
             it('resigns the input with the sender wallet', () => {
@@ -169,20 +169,5 @@ describe('Transaction', () => {
         });
     });
 
-    describe('rewardTransaction()', () => {
-        let rewardtransaction, minorWallet;
 
-        beforeEach(() => {
-            minorWallet = new Wallet();
-            rewardtransaction = Transaction.rewardTransaction({ minerWallet: minorWallet });
-        });
-
-        it('creates a transaction with the reward input', () => {
-            expect(rewardtransaction.input).toEqual(REWARD_INPUT);
-        });
-
-        it('creates one transaction for the minor with the MINING_REWARD', () => {
-            expect(rewardtransaction.outputMap[minorWallet.publicKey]).toEqual(MINING_REWARD);
-        });
-    });
 });

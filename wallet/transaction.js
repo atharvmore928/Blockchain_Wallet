@@ -1,6 +1,6 @@
 const { v1: uuidV1 } = require('uuid'); // Modern syntax for uuid v1
 const { verifySignature } = require('../util');
-const { REWARD_INPUT, MINING_REWARD } = require('../config');
+const { FEE_PERCENTAGE, ADMIN_WALLET_ADDRESS } = require('../config');
 
 class Transaction {
   constructor({ senderWallet, recipient, amount, outputMap, input }) {
@@ -11,8 +11,10 @@ class Transaction {
 
   createOutputMap({ senderWallet, recipient, amount }) {
     const outputMap = {};
+    const fee = amount * FEE_PERCENTAGE;
     outputMap[recipient] = amount;
-    outputMap[senderWallet.publicKey] = senderWallet.balance - amount;
+    outputMap[ADMIN_WALLET_ADDRESS] = fee;
+    outputMap[senderWallet.publicKey] = senderWallet.balance - amount - fee;
     return outputMap;
   }
 
@@ -26,7 +28,8 @@ class Transaction {
   } 
 
   update({ senderWallet, recipient, amount }) {
-    if (amount > this.outputMap[senderWallet.publicKey]) {
+    const fee = amount * FEE_PERCENTAGE;
+    if (amount + fee > this.outputMap[senderWallet.publicKey]) {
       throw new Error('Amount exceeds balance');
     }
 
@@ -37,8 +40,15 @@ class Transaction {
       this.outputMap[recipient] = this.outputMap[recipient] + amount;
     }
 
+    // Update the admin fee
+    if (!this.outputMap[ADMIN_WALLET_ADDRESS]) {
+      this.outputMap[ADMIN_WALLET_ADDRESS] = fee;
+    } else {
+      this.outputMap[ADMIN_WALLET_ADDRESS] = this.outputMap[ADMIN_WALLET_ADDRESS] + fee;
+    }
+
     // Deduct from sender and update the input signature
-    this.outputMap[senderWallet.publicKey] = this.outputMap[senderWallet.publicKey] - amount;
+    this.outputMap[senderWallet.publicKey] = this.outputMap[senderWallet.publicKey] - amount - fee;
     this.input = this.createInput({ senderWallet, outputMap: this.outputMap });
   }
  
@@ -48,7 +58,7 @@ class Transaction {
     const outputTotal = Object.values(outputMap)
       .reduce((total, outputAmount) => total + outputAmount, 0);
 
-    if (amount !== outputTotal) {
+    if (Math.abs(amount - outputTotal) > 0.00001) {
       console.error(`Invalid transaction from ${address}`);
       return false;
     }
@@ -65,11 +75,6 @@ class Transaction {
     return true;
   }
 
-  static rewardTransaction({ minerWallet}) {
-    return new this({
-      input: REWARD_INPUT,
-      outputMap: { [minerWallet.publicKey]: MINING_REWARD }
-    });
-  }
+
     }
 module.exports = Transaction;

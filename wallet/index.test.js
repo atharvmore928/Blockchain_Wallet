@@ -167,7 +167,10 @@ describe('Wallet', () => {
                         recipient: 'later-foo-address',
                         amount: 60
                     });
-                    sameBlockTransaction = Transaction.rewardTransaction({ minerWallet: wallet });
+                    sameBlockTransaction = new Wallet().createTransaction({
+                        recipient: wallet.publicKey,
+                        amount: 25
+                    });
                     
                     blockchain.addBlock({ data: [recentTransaction, sameBlockTransaction] });
 

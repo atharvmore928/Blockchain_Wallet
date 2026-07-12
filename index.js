@@ -14,14 +14,43 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const authMiddleware = require('./middleware/auth');
 const TransactionRecord = require('./models/Transaction');
+const BlockRecord = require('./models/Block');
 
 const app = express();
 
 app.use(cors());
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/cryptochain')
-    .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+const startInMemoryServer = async () => {
+    try {
+        const { MongoMemoryServer } = require('mongodb-memory-server');
+        const mongoServer = await MongoMemoryServer.create();
+        const inMemoryUri = mongoServer.getUri();
+        console.log(`In-Memory MongoDB server started at: ${inMemoryUri}`);
+        await mongoose.connect(inMemoryUri);
+        console.log('Connected to In-Memory MongoDB');
+    } catch (err) {
+        console.error('Failed to start or connect to In-Memory MongoDB server:', err);
+    }
+};
+
+const connectDatabase = async () => {
+    let mongoUri = process.env.MONGO_URI;
+
+    if (mongoUri) {
+        try {
+            console.log('Connecting to MongoDB Atlas...');
+            await mongoose.connect(mongoUri);
+            console.log('Connected to MongoDB Atlas');
+        } catch (err) {
+            console.error('MongoDB Atlas connection error:', err.message);
+            console.log('Falling back to In-Memory MongoDB server...');
+            await startInMemoryServer();
+        }
+    } else {
+        console.log('No MONGO_URI provided.');
+        await startInMemoryServer();
+    }
+};
 
 const blockchain = new Blockchain();
 const transactionPool = new TransactionPool();
@@ -44,9 +73,9 @@ app.get('/api/blocks', (req, res) => {
     res.json(blockchain.chain);
 });
 
-app.post('/api/mine', (req, res) => {
+app.post('/api/mine', async (req, res) => {
     const { data } = req.body;
-    blockchain.addBlock({ data });
+    await blockchain.addBlock({ data });
 
     pubsub.broadcastChain();
 
@@ -63,6 +92,10 @@ app.post('/api/transact', authMiddleware, async (req, res) => {
 
     try {
         if (transaction) {
+            userWallet.balance = Wallet.calculateBalance({
+                chain: blockchain.chain,
+                address: userWallet.publicKey
+            });
             transaction.update({ senderWallet: userWallet, recipient, amount });
         } else {
             transaction = userWallet.createTransaction({ 
@@ -95,8 +128,8 @@ app.get('/api/transaction-pool-map', (req, res) => {
     res.json(transactionPool.transactionMap);
 });
 
-app.get('/api/mine-transactions', (req, res) => {
-    transactionMinor.mineTransaction();
+app.get('/api/mine-transactions', async (req, res) => {
+    await transactionMinor.mineTransaction();
     res.redirect('/api/blocks');
 });
 
@@ -197,25 +230,44 @@ if (process.env.GENERATE_PEER_PORT === 'true') {
 
 const PORT = PEER_PORT || DEFAULT_PORT;
 
-const server = app.listen(PORT, () => {
-    console.log(`listening at localhost:${PORT}`);
+const init = async () => {
+    await connectDatabase();
 
-    if (PORT !== DEFAULT_PORT) {
-        syncWithRootState();
-
-        if (PEER_PORT) {
-            setInterval(syncWithRootState, 5000);
+    try {
+        const blocks = await BlockRecord.find().sort({ timestamp: 1 });
+        if (blocks.length > 0) {
+            console.log('Loaded blockchain from database');
+            blockchain.chain = blocks;
+        } else {
+            console.log('No blocks found in database. Saving genesis block.');
+            await BlockRecord.create(blockchain.chain[0]);
         }
-    }
-});
-
-server.on('error', (error) => {
-    if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${PORT} is already in use. Stop the other server first:`);
-        console.error(`  netstat -ano | findstr :${PORT}`);
-        console.error('  taskkill /PID <pid> /F');
-        process.exit(1);
+    } catch (error) {
+        console.error('Error loading blocks from database:', error);
     }
 
-    throw error;
-}); 
+    const server = app.listen(PORT, () => {
+        console.log(`listening at localhost:${PORT}`);
+
+        if (PORT !== DEFAULT_PORT) {
+            syncWithRootState();
+
+            if (PEER_PORT) {
+                setInterval(syncWithRootState, 5000);
+            }
+        }
+    });
+
+    server.on('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+            console.error(`Port ${PORT} is already in use. Stop the other server first:`);
+            console.error(`  netstat -ano | findstr :${PORT}`);
+            console.error('  taskkill /PID <pid> /F');
+            process.exit(1);
+        }
+
+        throw error;
+    });
+};
+
+init(); 

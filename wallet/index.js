@@ -1,4 +1,4 @@
-const { STARTING_BALANCE } = require('../config');
+const { STARTING_BALANCE, FEE_PERCENTAGE } = require('../config');
 const { ec } = require('../util');
 const cryptoHash = require('../util/crypto-hash');
 const Transaction = require('./transaction');
@@ -30,7 +30,8 @@ class Wallet {
             });
         }
 
-        if (amount > this.balance) {
+        const fee = amount * FEE_PERCENTAGE;
+        if (amount + fee > this.balance) {
             throw new Error('amount exceeds balance');
         }
 

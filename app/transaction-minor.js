@@ -8,14 +8,11 @@ class TransactionMinor {
         this.pubsub = pubsub;
     }
 
-    mineTransaction() {
+    async mineTransaction() {
         const validTransactions = this.transactionPool.validTransactions();
 
-        validTransactions.push(
-            Transaction.rewardTransaction({ minerWallet: this.wallet })
-        );
 
-        this.blockchain.addBlock({ data: validTransactions });
+        await this.blockchain.addBlock({ data: validTransactions });
 
         this.pubsub.broadcastChain();
 

@@ -1,82 +1,92 @@
-const redis = require('redis');
+const PubNub = require('pubnub');
+
+const credentials = {
+  publishKey: process.env.PUBNUB_PUBLISH_KEY,
+  subscribeKey: process.env.PUBNUB_SUBSCRIBE_KEY,
+  secretKey: process.env.PUBNUB_SECRET_KEY,
+  userId: 'blockchain-node'
+};
 
 const CHANNELS = {
   TEST: 'TEST',
   BLOCKCHAIN: 'BLOCKCHAIN',
-  TRANSACTION: 'TRANSACTION' // FIX 1: Added the transaction channel
+  TRANSACTION: 'TRANSACTION'
 };
 
 class PubSub {
-  // FIX 2: Added transactionPool to the constructor arguments
   constructor({ blockchain, transactionPool }) {
     this.blockchain = blockchain;
     this.transactionPool = transactionPool; 
+    
+    if (!credentials.publishKey || !credentials.subscribeKey) {
+        console.warn('⚠️ PubNub keys not found in .env. Peer synchronization is disabled.');
+        this.isEnabled = false;
+        return;
+    }
+
     this.isEnabled = true;
-
     try {
-      this.publisher = redis.createClient();
-      this.subscriber = redis.createClient();
+        this.pubnub = new PubNub(credentials);
+        this.pubnub.subscribe({ channels: Object.values(CHANNELS) });
 
-      this.publisher.on('error', () => {
-        this.isEnabled = false;
-      });
-
-      this.subscriber.on('error', () => {
-        this.isEnabled = false;
-      });
-
-      this.subscriber.on(
-        'message',
-        (channel, message) => this.handleMessage(channel, message)
-      );
-
-      this.subscribeToChannels();
+        this.pubnub.addListener({
+            message: messageObject => {
+                const { channel, message } = messageObject;
+                this.handleMessage(channel, message);
+            },
+            status: statusEvent => {
+                if (statusEvent.error) {
+                    console.error('PubNub status error:', statusEvent);
+                }
+            }
+        });
     } catch (error) {
-      this.isEnabled = false;
+        console.error('PubNub initialization error:', error);
+        this.isEnabled = false;
     }
   }
 
   handleMessage(channel, message) {
     console.log(`Message received. Channel: ${channel}. Message: ${message}.`);
 
-    const parsedMessage = JSON.parse(message);
+    let parsedMessage;
+    try {
+        parsedMessage = typeof message === 'string' ? JSON.parse(message) : message;
+    } catch(e) {
+        parsedMessage = message; 
+    }
 
-    // FIX 3: Turned into a switch statement to elegantly handle both chains and transactions
     switch(channel) {
       case CHANNELS.BLOCKCHAIN:
-        this.blockchain.replaceChain(parsedMessage);
-        break;
-      case CHANNELS.TRANSACTION:
-        this.transactionPool.setTransaction(parsedMessage, () => {
+        this.blockchain.replaceChain(parsedMessage, () => {
           this.transactionPool.clearBlockchainTransactions({
             chain: parsedMessage
           });
         });
+        break;
+      case CHANNELS.TRANSACTION:
+        this.transactionPool.setTransaction(parsedMessage);
         break;
       default:
         return;
     }
   }
 
-  subscribeToChannels() {
-    if (!this.isEnabled) {
-      return;
-    }
-
-    Object.values(CHANNELS).forEach(channel => {
-      this.subscriber.subscribe(channel);
-    });
-  }
-
   publish({ channel, message }) {
-    if (!this.isEnabled) {
-      return;
+    if (!this.isEnabled) return;
+    
+    try {
+        this.pubnub.unsubscribe({ channels: [channel] });
+        
+        setTimeout(() => {
+            this.pubnub.publish({ channel, message }).catch(err => {
+                console.error('PubNub publish error:', err);
+            });
+            this.pubnub.subscribe({ channels: [channel] });
+        }, 100);
+    } catch (error) {
+        console.error('PubNub publish error:', error);
     }
-    this.subscriber.unsubscribe(channel, () => {
-      this.publisher.publish(channel, message, () => {
-        this.subscriber.subscribe(channel);
-      });
-    });
   }
 
   broadcastChain() {
@@ -86,7 +96,6 @@ class PubSub {
     });
   }
 
-  // FIX 4: Added the missing broadcastTransaction method for Postman to use
   broadcastTransaction(transaction) {
     this.publish({
       channel: CHANNELS.TRANSACTION,
