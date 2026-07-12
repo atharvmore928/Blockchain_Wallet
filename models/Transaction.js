@@ -16,7 +16,7 @@ const TransactionSchema = new mongoose.Schema({
     }
 }, { 
     timestamps: true,
-    // Capped collection: maximum 100 documents, maximum size 1MB (size is required for capped)
+
     capped: { size: 1024 * 1024, max: 100 } 
 });
 

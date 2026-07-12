@@ -28,8 +28,7 @@ class Block {
             difficulty = Block.adjustDifficulty({ originalBlock: lastblock, timestamp });
             hash = cryptoHash(timestamp, nonce, difficulty, lasthash, data);
             
-            // CORRECT: We only convert to binary temporarily for the difficulty check.
-            // The actual 'hash' saved to the block remains a proper Hex string.
+
         } while (hextoBinary(hash).substring(0, difficulty) !== '0'.repeat(difficulty));
 
         return new this({ timestamp, lasthash, data, nonce, difficulty, hash });
@@ -42,7 +41,7 @@ class Block {
         if (difficulty < 1) return 1;
 
         if (difference > MINE_RATE) {
-            // FIXED: Using Math.max guarantees the difficulty never drops below 1
+
             return Math.max(difficulty - 1, 1);
         }
 

@@ -22,9 +22,9 @@ try {
             execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' });
             console.log(`Freed port ${port} (stopped PID ${pid})`);
         } catch (error) {
-            // Process may have already exited.
+
         }
     });
 } catch (error) {
-    // Port is already free.
+
 }

@@ -1,4 +1,4 @@
-const { v1: uuidV1 } = require('uuid'); // Modern syntax for uuid v1
+const { v1: uuidV1 } = require('uuid');
 const { verifySignature } = require('../util');
 const { FEE_PERCENTAGE, ADMIN_WALLET_ADDRESS } = require('../config');
 
@@ -33,21 +33,21 @@ class Transaction {
       throw new Error('Amount exceeds balance');
     }
 
-    // Adjust recipient balance accurately
+
     if (!this.outputMap[recipient]) {
       this.outputMap[recipient] = amount;
     } else {
       this.outputMap[recipient] = this.outputMap[recipient] + amount;
     }
 
-    // Update the admin fee
+
     if (!this.outputMap[ADMIN_WALLET_ADDRESS]) {
       this.outputMap[ADMIN_WALLET_ADDRESS] = fee;
     } else {
       this.outputMap[ADMIN_WALLET_ADDRESS] = this.outputMap[ADMIN_WALLET_ADDRESS] + fee;
     }
 
-    // Deduct from sender and update the input signature
+
     this.outputMap[senderWallet.publicKey] = this.outputMap[senderWallet.publicKey] - amount - fee;
     this.input = this.createInput({ senderWallet, outputMap: this.outputMap });
   }

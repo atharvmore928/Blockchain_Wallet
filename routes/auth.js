@@ -11,7 +11,7 @@ router.post('/google', async (req, res) => {
     try {
         const { token } = req.body;
         
-        // Verify Google Token
+
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID
@@ -20,14 +20,14 @@ router.post('/google', async (req, res) => {
         
         const { sub: googleId, email, name } = payload;
 
-        // Check if user already exists
+
         let user = await User.findOne({ googleId });
 
         if (!user) {
-            // Generate a new wallet for the user
+
             const userWallet = new Wallet();
             
-            // Create a new user record
+
             user = new User({
                 googleId,
                 email,
@@ -38,7 +38,7 @@ router.post('/google', async (req, res) => {
             await user.save();
         }
 
-        // Generate JWT token for session
+
         const jwtToken = jwt.sign(
             { id: user._id }, 
             process.env.JWT_SECRET || 'fallback_secret_for_development', 

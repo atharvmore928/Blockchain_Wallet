@@ -29,12 +29,12 @@ class Blocks extends Component {
                             {block.hash}
                         </div>
 
-                        {/* Fixed className placement here */}
+
                         <div className='Block'>{block.hash}</div>
 
                         <Block key={block.hash} block={block} />
-                    </div> /* Added missing closing div here */
-                ))} /* Added missing closing parenthesis here */
+                    </div>
+                ))}
             </div>
         );
     }

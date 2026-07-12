@@ -39,7 +39,7 @@ describe('TransactionPool', () => {
             validTransactions = [];
             errorMock = jest.fn();
             
-            // Cleanly spy on console.error and suppress standard error output during tests
+
             jest.spyOn(console, 'error').mockImplementation(errorMock);
 
             for (let i = 0; i < 10; i++) {
@@ -57,13 +57,13 @@ describe('TransactionPool', () => {
                     validTransactions.push(transaction);
                 }
 
-                // FIX: Add ALL transactions (both valid and invalid) to the pool
+
                 transactionpool.setTransaction(transaction);
             }
         });
 
         afterEach(() => {
-            // Restore console.error to its original state after these tests run
+
             jest.restoreAllMocks();
         });
 
@@ -102,7 +102,7 @@ describe('TransactionPool', () => {
                 } else {
                     expectedTransactionMap[transaction.id] = transaction;
                 }
-            } // FIX 1: The extra '}' that was here has been removed.
+            }
 
             transactionpool.clearBlockchainTransactions({ chain: blockchain.chain });
             expect(transactionpool.transactionMap).toEqual(expectedTransactionMap);

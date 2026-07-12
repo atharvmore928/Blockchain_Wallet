@@ -85,7 +85,7 @@ app.post('/api/mine', async (req, res) => {
 app.post('/api/transact', authMiddleware, async (req, res) => {
     const { amount, recipient } = req.body;
     
-    // Use the authenticated user's wallet
+
     const userWallet = new Wallet(req.user.privateKey);
     
     let transaction = transactionPool.existingTransaction({ inputAddress: userWallet.publicKey });
@@ -105,8 +105,7 @@ app.post('/api/transact', authMiddleware, async (req, res) => {
             });
         }
         
-        // Save to MongoDB Capped Collection
-        // Note: we use updateOne with upsert to handle updates if the transaction already existed in the pool
+
         await TransactionRecord.updateOne(
             { id: transaction.id },
             { $set: { outputMap: transaction.outputMap, input: transaction.input } },

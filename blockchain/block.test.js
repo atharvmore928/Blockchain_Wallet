@@ -84,7 +84,7 @@ describe('mineBlock()', () => {
 
         expect(possibleResults.includes(minedBlock.difficulty)).toBe(true);
     });
-}); // <-- FIXED: Added this missing closing syntax for 'mineBlock()'
+});
 
 describe('adjustDifficulty()', () => {
     const block = Block.genesis();

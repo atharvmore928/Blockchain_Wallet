@@ -32,7 +32,7 @@ class TransactionPool {
         for (let i = 1; i < chain.length; i++) {
             const block = chain[i];
 
-            // FIX 1: Removed the extra "for" keyword
+
             for (let transaction of block.data) {
                 if (this.transactionMap[transaction.id]) {
                     delete this.transactionMap[transaction.id];

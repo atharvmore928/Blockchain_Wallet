@@ -12,11 +12,11 @@ class Login extends Component {
                 token: credentialResponse.credential
             });
             
-            // Save token and user info
+
             localStorage.setItem('token', res.data.token);
             localStorage.setItem('user', JSON.stringify(res.data.user));
             
-            // Redirect to home
+
             history.push('/');
         } catch (error) {
             console.error('Login Failed:', error);

@@ -71,7 +71,7 @@ describe('Wallet', () => {
             it('calls `Wallet.calculateBalance()`', () => {
                 const calculateBalanceMock = jest.fn();
 
-                // FIX: Save the original method before replacing it with the mock
+
                 const originalCalculateBalance = Wallet.calculateBalance;
 
                 Wallet.calculateBalance = calculateBalanceMock;

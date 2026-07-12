@@ -11,7 +11,7 @@ import ConductTransaction from './components/ConductTransaction';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Login from './components/Login';
 
-const GOOGLE_CLIENT_ID = '1056587351266-4onntkik630q74oq53e03pgu1mm48rsu.apps.googleusercontent.com'; // Replace this with the actual client ID later
+const GOOGLE_CLIENT_ID = '1056587351266-4onntkik630q74oq53e03pgu1mm48rsu.apps.googleusercontent.com';
 
 render(
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
