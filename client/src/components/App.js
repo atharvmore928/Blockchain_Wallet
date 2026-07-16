@@ -16,7 +16,7 @@ class App extends Component {
     const user = JSON.parse(localStorage.getItem('user'));
     this.setState({ user });
 
-    fetch('http://localhost:3000/api/wallet-info', {
+    fetch(`${window.location.origin}/api/wallet-info`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

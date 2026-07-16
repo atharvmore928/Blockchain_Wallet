@@ -16,7 +16,7 @@ class ConductTransaction extends Component {
     ConductTransaction = () => {
         const { recipient, amount } = this.state;
         const token = localStorage.getItem('token');
-        fetch('http://localhost:3000/api/transact', {
+        fetch(`${window.location.origin}/api/transact`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',

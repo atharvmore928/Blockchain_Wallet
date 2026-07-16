@@ -8,7 +8,7 @@ class Login extends Component {
 
     handleLoginSuccess = async (credentialResponse) => {
         try {
-            const res = await axios.post('http://localhost:3000/api/auth/google', {
+            const res = await axios.post(`${window.location.origin}/api/auth/google`, {
                 token: credentialResponse.credential
             });
             
