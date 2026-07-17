@@ -8,16 +8,18 @@ class Login extends Component {
 
     handleLoginSuccess = async (credentialResponse) => {
         try {
-            const res = await axios.post(`${window.location.origin}/api/auth/google`, {
+            const API_BASE_URL = process.env.REACT_APP_API_URL || window.location.origin;
+            const res = await axios.post(`${API_BASE_URL}/api/auth/google`, {
                 token: credentialResponse.credential
             });
             
-
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
-            
-
-            history.push('/');
+            if (res.data && res.data.token && res.data.user) {
+                localStorage.setItem('token', res.data.token);
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                history.push('/');
+            } else {
+                throw new Error("Invalid response from server. Check REACT_APP_API_URL.");
+            }
         } catch (error) {
             console.error('Login Failed:', error);
             this.setState({ error: 'Failed to authenticate with the server.' });

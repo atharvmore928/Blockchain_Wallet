@@ -13,10 +13,19 @@ class App extends Component {
       return;
     }
 
-    const user = JSON.parse(localStorage.getItem('user'));
-    this.setState({ user });
+    const userStr = localStorage.getItem('user');
+    if (userStr && userStr !== 'undefined') {
+      try {
+        const user = JSON.parse(userStr);
+        this.setState({ user });
+      } catch (e) {
+        console.error('Failed to parse user', e);
+      }
+    }
 
-    fetch(`${window.location.origin}/api/wallet-info`, {
+    const API_BASE_URL = process.env.REACT_APP_API_URL || window.location.origin;
+
+    fetch(`${API_BASE_URL}/api/wallet-info`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

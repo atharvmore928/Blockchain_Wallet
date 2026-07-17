@@ -10,13 +10,15 @@ class TransactionPool extends Component {
     state = { transactionPoolMap: {} };
 
     fetchTransactionPoolMap = () => {
-        fetch(`${document.location.origin}/api/transaction-pool-map`)
+        const API_BASE_URL = process.env.REACT_APP_API_URL || document.location.origin;
+        fetch(`${API_BASE_URL}/api/transaction-pool-map`)
             .then(response => response.json())
             .then(json => this.setState({ transactionPoolMap: json }));
     }
 
     fetchMineTransactions = () => {
-        fetch(`${document.location.origin}/api/mine-transactions`)
+        const API_BASE_URL = process.env.REACT_APP_API_URL || document.location.origin;
+        fetch(`${API_BASE_URL}/api/mine-transactions`)
             .then(response => {
                 if (response.status === 200) {
                     alert('success');
