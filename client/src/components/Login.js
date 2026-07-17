@@ -17,12 +17,14 @@ class Login extends Component {
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('user', JSON.stringify(res.data.user));
                 history.push('/');
+            } else if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) {
+                throw new Error("Backend API is not running. The server returned HTML instead of JSON. Ensure the backend is deployed as a Web Service on Render.");
             } else {
                 throw new Error("Invalid response from server. Check REACT_APP_API_URL.");
             }
         } catch (error) {
             console.error('Login Failed:', error);
-            this.setState({ error: 'Failed to authenticate with the server.' });
+            this.setState({ error: error.message || 'Failed to authenticate with the server.' });
         }
     };
 
