@@ -18,7 +18,7 @@ const BlockRecord = require('./models/Block');
 
 const app = express();
 
-app.use(cors({ origin: 'https://blockchain-wallet-smmi.onrender.com' }));
+app.use(cors({ origin: ['https://blockchain-wallet-smmi.onrender.com', 'http://localhost:1234'] }));
 app.use((req, res, next) => {
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     next();
