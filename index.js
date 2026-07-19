@@ -132,8 +132,12 @@ app.get('/api/transaction-pool-map', (req, res) => {
 });
 
 app.get('/api/mine-transactions', async (req, res) => {
-    await transactionMinor.mineTransaction();
-    res.redirect('/api/blocks');
+    const success = await transactionMinor.mineTransaction();
+    if (success) {
+        res.redirect('/api/blocks');
+    } else {
+        res.status(400).json({ type: 'error', message: 'No valid transactions to mine' });
+    }
 });
 
 app.get('/api/wallet-info', authMiddleware, (req, res) => {
